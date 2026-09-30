@@ -43,6 +43,7 @@ class LoginFormAdapter:
     async def ask_enter_code(self, page_url: "URL", user_code: str) -> None:
         """Show the login button and wait for the user to click it before polling begins."""
         self.page_url = page_url
+        self._manager.print(f"Go to {page_url} and enter code: {user_code}")
         self.update(_("gui", "login", "required"), None)
         self._manager.grab_attention(sound=False)
         self._manager.print(_("gui", "login", "request"))

@@ -108,6 +108,7 @@ CACHE_PATH = Path(WORKING_DIR, "cache")
 CACHE_DB = Path(CACHE_PATH, "mapping.json")
 COOKIES_PATH = Path(CONFIG_PATH, "cookies.jar")
 SETTINGS_PATH = Path(CONFIG_PATH, "settings.json")
+CAMPAIGN_CACHE_PATH = Path(CONFIG_PATH, "campaign_cache.json")
 # Typing
 JsonType = Dict[str, Any]
 URLType = NewType("URLType", str)
