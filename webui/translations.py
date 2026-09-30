@@ -27,7 +27,7 @@ default_webui_translation: dict[str, Any] = {
     "webui": {
         "settings": {
             "advanced": {
-                "priority_link_override": "Mine unlinked games from the Priority List: "
+                "priority_link_override": "Mine unlinked games from the List: "
             },
             "general": {"language": "Language: ", "invalid_proxy": "Invalid proxy URL"},
         },
@@ -57,6 +57,10 @@ default_webui_translation: dict[str, Any] = {
             "add_anyway": "Add it anyway?",
             "cancel": "Cancel",
             "add": "Add",
+            "bulk_add": "Bulk add",
+            "bulk_add_title": "Bulk add games",
+            "bulk_add_hint": "One game per line, or comma-separated.",
+            "bulk_add_placeholder": "Warframe\nThe Witcher 3: Wild Hunt",
         },
         "status": {"name": "Status:"},
     }

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from webui.manager import WebUIManager
 
 
-class PrioritySection(GameListSection):
+class ListSection(GameListSection):
     def __init__(self, manager: "WebUIManager") -> None:
         super().__init__(manager)
         self._selected: int | None = None
@@ -23,7 +23,7 @@ class PrioritySection(GameListSection):
             .props("flat bordered")
             .classes("q-pa-sm flex flex-col grow shrink basis-60 min-w-0")
         ):
-            ui.label(_("gui", "settings", "priority")).classes("font-bold text-sm")
+            ui.label(_("gui", "settings", "list")).classes("font-bold text-sm")
             self._input_content()
             with ui.row().classes("w-full gap-1 items-start min-h-[200px]"):
                 self._list_content()
@@ -45,10 +45,10 @@ class PrioritySection(GameListSection):
                     )
 
     def _options(self) -> list[str]:
-        return sorted(self._game_names - set(self._settings.priority))
+        return sorted(self._game_names - set(self._settings.list))
 
     def _items(self) -> list[tuple[int, str]]:
-        return list(enumerate(self._settings.priority))
+        return list(enumerate(self._settings.list))
 
     def _item_label(self, item: tuple[int, str]) -> str:
         _, name = item
@@ -66,7 +66,7 @@ class PrioritySection(GameListSection):
     def _on_delete(self) -> None:
         if self._selected is None:
             return
-        priority = self._settings.priority
+        priority = self._settings.list
         if 0 <= self._selected < len(priority):
             del priority[self._selected]
             self._settings.save(force=True)
@@ -75,8 +75,8 @@ class PrioritySection(GameListSection):
             self._input_content.refresh()
 
     def _do_add(self, name: str, input_el: "Input") -> None:
-        if name not in self._settings.priority:
-            self._settings.priority.append(name)
+        if name not in self._settings.list:
+            self._settings.list.append(name)
             self._settings.save(force=True)
         if input_el is not None:
             input_el.set_value("")
@@ -85,7 +85,7 @@ class PrioritySection(GameListSection):
 
     def _move(self, direction: str) -> None:
         idx = self._selected
-        priority = self._settings.priority
+        priority = self._settings.list
         if idx is None or not priority or idx < 0 or idx >= len(priority):
             return
         max_idx = len(priority) - 1

@@ -26,7 +26,7 @@ def _priority_link_override_get(self) -> bool:
     return (
         self._twitch.settings.priority_link_override
         and not self.linked
-        and self.game.name in self._twitch.settings.priority
+        and self.game.name in self._twitch.settings.list
     )
 
 

@@ -185,7 +185,7 @@ class GUISettings(TypedDict):
     advanced: GUISettingsAdvanced
     priority_modes: GUIPriorityModes
     game_name: str
-    priority: str
+    list: str
     exclude: str
     reload: str
     reload_text: str
@@ -398,7 +398,7 @@ default_translation: Translation = {
                 "low_availability": "Low availability first",
             },
             "game_name": "Game name",
-            "priority": "Priority",
+            "list": "List",
             "exclude": "Exclude",
             "reload": "Reload",
             "reload_text": "Most changes require a reload to take an immediate effect: ",
@@ -427,12 +427,12 @@ default_translation: Translation = {
                 "3. If you're interested in mining everything possible, "
                 "change the Priority Mode to anything other than \"Priority list only\" "
                 "and press on \"Reload\".\n"
-                "4. If you want to mine specific games first, use the \"Priority\" list "
+                "4. If you want to mine specific games first, use the \"List\" "
                 "to set up an ordered list of games of your choice. "
                 "Games from the top of the list will be attempted to be mined first, "
                 "before the ones lower down the list.\n"
                 "5. Keep the \"Priority mode\" selected as \"Priority list only\", "
-                "to avoid mining games that are not on the priority list. "
+                "to avoid mining games that are not on the list. "
                 "Or not - it's up to you.\n"
                 "6. Use the \"Exclude\" list to tell the application "
                 "which games should never be mined.\n"

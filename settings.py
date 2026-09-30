@@ -4,6 +4,9 @@ from typing import Any, TypedDict, TYPE_CHECKING
 
 from yarl import URL
 
+import json
+from pathlib import Path
+
 from utils import json_load, json_save
 from constants import CONFIG_PATH, SETTINGS_PATH, DEFAULT_LANG, PriorityMode
 
@@ -16,7 +19,7 @@ class SettingsFile(TypedDict):
     language: str
     dark_mode: bool
     exclude: set[str]
-    priority: list[str]
+    list: list[str]
     autostart_tray: bool
     connection_quality: int
     tray_notifications: bool
@@ -27,7 +30,7 @@ class SettingsFile(TypedDict):
 
 default_settings: SettingsFile = {
     "proxy": URL(),
-    "priority": [],
+    "list": [],
     "exclude": set(),
     "dark_mode": False,
     "autostart_tray": False,
@@ -39,6 +42,28 @@ default_settings: SettingsFile = {
     "priority_mode": PriorityMode.PRIORITY_ONLY,
 }
 
+
+
+def _migrate_legacy_priority_key(path: Path) -> None:
+    """
+    Backward compatibility: settings files written before the "priority" ->
+    "list" rename still have their game list stored under the old key.
+    Rewrite the file in place so json_load's default-merging does not drop it.
+    """
+    if not path.exists():
+        return
+    try:
+        with path.open("r", encoding="utf8") as file:
+            data = json.load(file)
+    except (json.JSONDecodeError, OSError):
+        return
+    if isinstance(data, dict) and "priority" in data and "list" not in data:
+        data["list"] = data.pop("priority")
+        try:
+            with path.open("w", encoding="utf8") as file:
+                json.dump(data, file, indent=4)
+        except OSError:
+            pass
 
 class Settings:
     # from args
@@ -55,7 +80,7 @@ class Settings:
     language: str
     dark_mode: bool
     exclude: set[str]
-    priority: list[str]
+    list: list[str]
     autostart_tray: bool
     connection_quality: int
     tray_notifications: bool
@@ -67,6 +92,7 @@ class Settings:
 
     def __init__(self, args: ParsedArgs):
         CONFIG_PATH.mkdir(parents=True, exist_ok=True)
+        _migrate_legacy_priority_key(SETTINGS_PATH)
         self._settings: SettingsFile = json_load(SETTINGS_PATH, default_settings)
         self._args: ParsedArgs = args
         self._altered: bool = False

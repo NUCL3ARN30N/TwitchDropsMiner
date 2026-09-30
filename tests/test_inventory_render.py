@@ -31,7 +31,7 @@ def _make_settings(
     settings = MagicMock()
     settings.priority_mode = priority_mode
     settings.exclude = exclude or set()
-    settings.priority = priority or []
+    settings.list = priority or []
     settings.enable_badges_emotes = False
     return settings
 
@@ -251,7 +251,7 @@ def test_excluded_game(filter_excluded, expected):
 def test_priority_game_visible_even_if_excluded():
     panel = _make_panel()
     panel._manager._twitch.settings.exclude = {"Priority Game"}
-    panel._manager._twitch.settings.priority = ["Priority Game"]
+    panel._manager._twitch.settings.list = ["Priority Game"]
     assert (
         panel._campaign_visible(_make_campaign(game_name="Priority Game", active=True))
         is True
@@ -275,7 +275,7 @@ def test_priority_game_visible_even_if_excluded():
 def test_priority_only_mode(game_name, priority, expected):
     panel = _make_panel()
     panel._manager._twitch.settings.priority_mode = PriorityMode.PRIORITY_ONLY
-    panel._manager._twitch.settings.priority = priority
+    panel._manager._twitch.settings.list = priority
     assert (
         panel._campaign_visible(_make_campaign(game_name=game_name, active=True))
         is expected

@@ -1357,7 +1357,7 @@ class InventoryOverview:
             and (
                 excluded or (
                     campaign.game.name not in self._settings.exclude
-                    and not priority_only or campaign.game.name in self._settings.priority
+                    and not priority_only or campaign.game.name in self._settings.list
                 )
             )
             and (finished or not campaign.finished)
@@ -1763,7 +1763,7 @@ class SettingsPanel:
 
         # Priority section
         priority_frame = ttk.LabelFrame(
-            center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "priority")
+            center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "list")
         )
         priority_frame.grid(column=1, row=0, rowspan=2, sticky="nsew")
         self._priority_entry = PlaceholderCombobox(
@@ -1784,7 +1784,7 @@ class SettingsPanel:
             exportselection=False,
         )
         self._priority_list.grid(column=0, row=1, rowspan=5, sticky="nsew")
-        self._priority_list.insert("end", *self._settings.priority)
+        self._priority_list.insert("end", *self._settings.list)
         weight_scale: int = 5
         ttk.Button(  # Move to top
             priority_frame,
@@ -1981,7 +1981,7 @@ class SettingsPanel:
 
     def update_priority_choices(self) -> None:
         self._priority_entry.config(
-            values=sorted(self._game_names.difference(self._settings.priority))
+            values=sorted(self._game_names.difference(self._settings.list))
         )
 
     def set_games(self, games: set[Game]) -> None:
@@ -1997,12 +1997,12 @@ class SettingsPanel:
         self._priority_entry.clear()
         # add it preventing duplicates
         try:
-            existing_idx: int = self._settings.priority.index(game_name)
+            existing_idx: int = self._settings.list.index(game_name)
         except ValueError:
             # not there, add it
             self._priority_list.insert("end", game_name)
             self._priority_list.see("end")
-            self._settings.priority.append(game_name)
+            self._settings.list.append(game_name)
             self._settings.alter()
             self.update_priority_choices()
         else:
@@ -2040,8 +2040,8 @@ class SettingsPanel:
         self._priority_list.selection_set(insert_idx)
         self._priority_list.see(insert_idx)
         # update the underlying settings list too
-        self._settings.priority.pop(idx)
-        self._settings.priority.insert(insert_idx, item)
+        self._settings.list.pop(idx)
+        self._settings.list.insert(insert_idx, item)
         self._settings.alter()
 
     def priority_delete(self) -> None:
@@ -2049,7 +2049,7 @@ class SettingsPanel:
         if idx is None:
             return
         self._priority_list.delete(idx)
-        del self._settings.priority[idx]
+        del self._settings.list[idx]
         self._settings.alter()
         self.update_priority_choices()
 
@@ -2848,7 +2848,7 @@ if __name__ == "__main__":
         mock = SimpleNamespace(
             settings=SimpleNamespace(
                 tray=False,
-                priority=[],
+                list=[],
                 proxy=URL(),
                 dark_mode=False,
                 alter=lambda: None,

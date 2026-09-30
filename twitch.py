@@ -669,7 +669,7 @@ class Twitch:
                 # figure out which games we want
                 self.wanted_games.clear()
                 exclude = self.settings.exclude
-                priority = self.settings.priority
+                priority = self.settings.list
                 priority_mode = self.settings.priority_mode
                 priority_only = priority_mode is PriorityMode.PRIORITY_ONLY
                 next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
@@ -1435,7 +1435,7 @@ class Twitch:
             if campaign_data.get("game") is not None:
                 game = Game(campaign_data["game"])
                 games[game.name] = game
-        for game_name in self.settings.priority:
+        for game_name in self.settings.list:
             if game_name not in games:
                 games[game_name] = Game({"id": 0, "name": game_name})
         games = {
