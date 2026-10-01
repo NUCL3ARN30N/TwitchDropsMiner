@@ -29,3 +29,4 @@ settings.json
 *.app
 
 /config
+venv/
