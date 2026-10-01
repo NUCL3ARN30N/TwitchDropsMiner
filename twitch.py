@@ -914,6 +914,10 @@ class Twitch:
         interval: float = WATCH_INTERVAL.total_seconds()
         while True:
             channel: Channel = await self.watching_channel.get()
+            logger.info(
+                f"[WATCHDEBUG] loop tick channel={channel.name!r} "
+                f"online={channel.online} stream_is_none={channel._stream is None}"
+            )
             if not channel.online:
                 # if the channel isn't online anymore, we stop watching it
                 self.stop_watching()
