@@ -67,6 +67,18 @@ default_webui_translation: dict[str, Any] = {
             "no_new_active_campaigns": "All currently active campaigns are already here.",
             "no_active_campaigns": "No active drop campaigns found right now.",
         },
+        "channels": {
+            "title": "Channels (points mining)",
+            "empty_hint": (
+                "Watched, and their points mined, whenever no drop campaign "
+                "needs the watch slot. Priority order top to bottom."
+            ),
+            "channel_login": "Channel login",
+            "already_added": "That channel is already in the list.",
+            "invalid_channel": '"{login}" could not be found on Twitch.',
+            "live": "live",
+            "offline": "offline",
+        },
         "status": {"name": "Status:"},
     }
 }

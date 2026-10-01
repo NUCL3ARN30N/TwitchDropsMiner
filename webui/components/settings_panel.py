@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from nicegui import ui
 
 from .base_panel import BasePanel
-from .settings import GeneralSection, ListSection, ExcludeSection
+from .settings import GeneralSection, ListSection, ExcludeSection, ChannelsSection
 
 if TYPE_CHECKING:
     from webui.manager import WebUIManager
@@ -18,12 +18,14 @@ class SettingsPanel(BasePanel):
         self._general_section = GeneralSection(manager)
         self._list_section = ListSection(manager)
         self._exclude_section = ExcludeSection(manager)
+        self._channels_section = ChannelsSection(manager)
 
     def build(self) -> None:
         with ui.row().classes("w-full gap-2 items-stretch flex-wrap"):
             self._general_section.build()
             self._list_section.build()
             self._exclude_section.build()
+            self._channels_section.build()
 
     def set_games(self, games: set["Game"]) -> None:
         self._list_section.set_games(games)

@@ -463,6 +463,8 @@ class Twitch:
         self.channels: OrderedDict[int, Channel] = OrderedDict()
         self.watching_channel: AwaitableValue[Channel] = AwaitableValue()
         self._watching_task: asyncio.Task[None] | None = None
+        self._points_channels: dict[str, Channel] = {}
+        self._points_task: asyncio.Task[None] | None = None
         self._watching_restart = asyncio.Event()
         # Websocket
         self.websocket = WebsocketPool(self)
@@ -630,11 +632,17 @@ class Twitch:
         if self._watching_task is not None:
             self._watching_task.cancel()
         self._watching_task = asyncio.create_task(self._watch_loop())
+        if self._points_task is not None:
+            self._points_task.cancel()
+        self._points_task = asyncio.create_task(self._points_loop())
         # Add default topics
         self.websocket.add_topics([
             WebsocketTopic("User", "Drops", auth_state.user_id, self.process_drops),
             WebsocketTopic(
                 "User", "Notifications", auth_state.user_id, self.process_notifications
+            ),
+            WebsocketTopic(
+                "User", "CommunityPoints", auth_state.user_id, self.process_community_points
             ),
         ])
         full_cleanup: bool = False
@@ -648,6 +656,7 @@ class Twitch:
                 self.gui.tray.change_icon("idle")
                 self.gui.status.update(_("gui", "status", "idle"))
                 self.stop_watching()
+                await self._points_tick()
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
             elif self._state is State.INVENTORY_FETCH:
@@ -1056,6 +1065,93 @@ class Twitch:
     def restart_watching(self):
         self.gui.progress.stop_timer()
         self._watching_restart.set()
+
+
+    async def resolve_channel_login(self, login: str) -> Channel | None:
+        """
+        Resolves a bare channel login (as typed by the user) into a full
+        Channel object, caching the result for subsequent calls.
+    
+        Used both by the WebUI (to validate/add a channel to the points
+        priority list) and internally by the points-mining loop.
+        """
+        if login in self._points_channels:
+            return self._points_channels[login]
+        try:
+            response: JsonType = await self.gql_request(
+                GQL_QUERIES["GetStreamInfo"].with_variables({"channel": login})
+            )
+        except MinerException:
+            return None
+        user_data: JsonType | None = response["data"]["user"]
+        if not user_data:
+            return None
+        channel = Channel(
+            self, id=user_data["id"], login=login, display_name=user_data.get("displayName")
+        )
+        self._points_channels[login] = channel
+        return channel
+
+    async def _points_tick(self) -> None:
+        """
+        Picks (or keeps) a channel-points filler channel to watch while the
+        drops side of the app has nothing to watch. A no-op unless we are
+        currently IDLE and the user has configured a channels priority list.
+
+        Preemption by a real drop channel is handled for free: once the main
+        cycle runs through CHANNELS_FETCH again, it finds the points channel
+        isn't a tracked drop channel and calls stop_watching() on it.
+        """
+        if self._state is not State.IDLE:
+            return
+        point_logins = self.settings.point_channels
+        if not point_logins:
+            return
+        current = self.watching_channel.get_with_default(None)
+        if current is not None:
+            if current.id not in {c.id for c in self._points_channels.values()}:
+                # something else holds the slot; leave it alone
+                return
+            await current.update_stream()
+            if current.online:
+                return
+            self.stop_watching()
+        for login in point_logins:
+            channel = await self.resolve_channel_login(login)
+            if channel is None:
+                continue
+            await channel.update_stream()
+            if channel.online:
+                self.watch(channel)
+                return
+
+    async def _points_loop(self) -> None:
+        """
+        Periodically re-checks the channel-points filler channel so an offline
+        channel is dropped in favor of the next priority one, and a newly-live
+        one is picked up, even if nothing else wakes the main loop.
+        """
+        while True:
+            await asyncio.sleep(60)
+            try:
+                await self._points_tick()
+            except Exception:
+                logger.exception("Error in points-mining loop")
+
+    @task_wrapper
+    async def process_community_points(self, user_id: int, message: JsonType):
+        if message["type"] != "claim-available":
+            return
+        claim = message["data"]["claim"]
+        watching_channel = self.watching_channel.get_with_default(None)
+        if watching_channel is None or str(watching_channel.id) != str(claim["channel_id"]):
+            # only claim bonuses for the channel we're actively watching
+            return
+        await self.gql_request(
+            GQL_QUERIES["ClaimCommunityPoints"].with_variables(
+                {"input": {"claimID": claim["id"], "channelID": str(claim["channel_id"])}}
+            )
+        )
 
     @task_wrapper
     async def process_stream_state(self, channel_id: int, message: JsonType):

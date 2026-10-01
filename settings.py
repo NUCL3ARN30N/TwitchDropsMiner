@@ -20,6 +20,7 @@ class SettingsFile(TypedDict):
     dark_mode: bool
     exclude: set[str]
     list: list[str]
+    point_channels: list[str]
     autostart_tray: bool
     connection_quality: int
     tray_notifications: bool
@@ -31,6 +32,7 @@ class SettingsFile(TypedDict):
 default_settings: SettingsFile = {
     "proxy": URL(),
     "list": [],
+    "point_channels": [],
     "exclude": set(),
     "dark_mode": False,
     "autostart_tray": False,
@@ -81,6 +83,7 @@ class Settings:
     dark_mode: bool
     exclude: set[str]
     list: list[str]
+    point_channels: list[str]
     autostart_tray: bool
     connection_quality: int
     tray_notifications: bool
