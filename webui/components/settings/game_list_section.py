@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-import re
 from typing import TYPE_CHECKING
 
 from nicegui import ui
@@ -95,9 +94,11 @@ class GameListSection(ABC):
             ui.button("+", on_click=lambda: self._add_game(input_el)).props(
                 "dense flat"
             ).classes("text-xl p-0 min-h-0")
-            ui.button(icon="playlist_add", on_click=self._open_bulk_dialog).props(
+            ui.button(icon="campaign", on_click=self._open_bulk_dialog).props(
                 "dense flat"
-            ).classes("text-lg p-0 min-h-0")
+            ).classes("text-lg p-0 min-h-0").tooltip(
+                _("webui", "game_list", "active_campaigns_tooltip")
+            )
 
     @ui.refreshable
     def _list_content(self) -> None:
@@ -132,36 +133,46 @@ class GameListSection(ABC):
         self._do_add(name, input_el)
 
     def _open_bulk_dialog(self) -> None:
-        with ui.dialog().props("transition-show=none transition-hide=none") as dialog, ui.card().classes("q-pa-sm gap-2"):
-            ui.label(_("webui", "game_list", "bulk_add_title")).classes(
+        twitch = self._manager._twitch
+        active_names = sorted({c.game.name for c in twitch.inventory if c.active})
+        available = set(self._options())
+        new_names = [n for n in active_names if n in available]
+        with ui.dialog().props("transition-show=none transition-hide=none") as dialog, ui.card().classes("q-pa-sm gap-2 max-w-md"):
+            ui.label(_("webui", "game_list", "active_campaigns_title")).classes(
                 "text-sm font-bold"
             )
-            ui.label(_("webui", "game_list", "bulk_add_hint")).classes("text-xs")
-            textarea = (
-                ui.textarea(
-                    placeholder=_("webui", "game_list", "bulk_add_placeholder"),
+            if not active_names:
+                ui.label(_("webui", "game_list", "no_active_campaigns")).classes("text-xs")
+            elif not new_names:
+                ui.label(_("webui", "game_list", "no_new_active_campaigns")).classes(
+                    "text-xs"
                 )
-                .classes("w-full text-xs")
-                .props("dense outlined rows=8")
-            )
+            else:
+                ui.label(
+                    _("webui", "game_list", "active_campaigns_found").format(
+                        count=len(new_names)
+                    )
+                ).classes("text-xs")
+                with ui.scroll_area().classes("w-full max-h-40"):
+                    ui.label(", ".join(new_names)).classes("text-xs")
             with ui.row().classes("gap-2 justify-end w-full"):
-
+    
                 def _cancel():
                     dialog.close()
                     dialog.delete()
-
-                def _confirm():
-                    raw = textarea.value or ""
-                    names = [n.strip() for n in re.split(r"[,\n]", raw) if n.strip()]
-                    dialog.close()
-                self._add_bulk(names)
-
+    
                 ui.button(
                     _("webui", "game_list", "cancel"), on_click=_cancel
                 ).props("dense flat").classes("text-xs")
-                ui.button(
-                    _("webui", "game_list", "add"), on_click=_confirm
-                ).props("dense").classes("text-xs")
+                if new_names:
+    
+                    def _confirm():
+                        dialog.close()
+                        self._add_bulk(new_names)
+    
+                    ui.button(
+                        _("webui", "game_list", "add"), on_click=_confirm
+                    ).props("dense").classes("text-xs")
         dialog.open()
 
     def _add_bulk(self, names: list[str]) -> None:

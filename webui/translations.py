@@ -61,6 +61,11 @@ default_webui_translation: dict[str, Any] = {
             "bulk_add_title": "Bulk add games",
             "bulk_add_hint": "One game per line, or comma-separated.",
             "bulk_add_placeholder": "Warframe\nThe Witcher 3: Wild Hunt",
+            "active_campaigns_tooltip": "Add currently active campaigns",
+            "active_campaigns_title": "Add active campaigns",
+            "active_campaigns_found": "Found {count} active campaign(s) not yet added:",
+            "no_new_active_campaigns": "All currently active campaigns are already here.",
+            "no_active_campaigns": "No active drop campaigns found right now.",
         },
         "status": {"name": "Status:"},
     }
