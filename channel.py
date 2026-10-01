@@ -484,14 +484,21 @@ class Channel:
     async def send_watch(self) -> bool:
         if self._stream is None:
             return False
-        if self._spade_url is None:
-            self._spade_url = await self.get_spade_url()
         try:
+            if self._spade_url is None:
+                self._spade_url = await self.get_spade_url()
             async with self._twitch.request(
                 "POST", self._spade_url, data=self._stream.spade_payload
             ) as response:
-                return response.status == 204
-        except RequestException:
+                ok = response.status == 204
+                logger.info(
+                    f"[WATCHDEBUG] send_watch channel={self._login!r} "
+                    f"spade_url={self._spade_url} status={response.status} ok={ok} "
+                    f"payload={self._stream.spade_payload!r}"
+                )
+                return ok
+        except (RequestException, MinerException) as exc:
+            logger.info(f"[WATCHDEBUG] send_watch FAILED channel={self._login!r} exc={exc!r}")
             return False
 
     # NOTE: This is currently unused.
