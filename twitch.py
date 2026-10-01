@@ -465,6 +465,7 @@ class Twitch:
         self._watching_task: asyncio.Task[None] | None = None
         self._points_channels: dict[str, Channel] = {}
         self._points_task: asyncio.Task[None] | None = None
+        self._points_topic_channel_id: int | None = None
         self._watching_restart = asyncio.Event()
         # Websocket
         self.websocket = WebsocketPool(self)
@@ -1056,6 +1057,19 @@ class Twitch:
         self.gui.tray.change_icon("active")
         self.gui.channels.set_watching(channel)
         self.watching_channel.set(channel)
+        if self._points_topic_channel_id != channel.id:
+            if self._points_topic_channel_id is not None:
+                self.websocket.remove_topics([
+                    WebsocketTopic.as_str(
+                        "Channel", "CommunityPoints", self._points_topic_channel_id
+                    )
+                ])
+            self.websocket.add_topics([
+                WebsocketTopic(
+                    "Channel", "CommunityPoints", channel.id, self.process_channel_points
+                )
+            ])
+            self._points_topic_channel_id = channel.id
         if update_status:
             status_text = _("status", "watching").format(channel=channel.name)
             self.print(status_text)
@@ -1065,6 +1079,13 @@ class Twitch:
         self.gui.clear_drop()
         self.watching_channel.clear()
         self.gui.channels.clear_watching()
+        if self._points_topic_channel_id is not None:
+            self.websocket.remove_topics([
+                WebsocketTopic.as_str(
+                    "Channel", "CommunityPoints", self._points_topic_channel_id
+                )
+            ])
+            self._points_topic_channel_id = None
 
     def restart_watching(self):
         self.gui.progress.stop_timer()
@@ -1162,6 +1183,18 @@ class Twitch:
         if watching_channel is None or str(watching_channel.id) != str(claim["channel_id"]):
             # only claim bonuses for the channel we're actively watching
             return
+        await self.gql_request(
+            GQL_QUERIES["ClaimCommunityPoints"].with_variables(
+                {"input": {"claimID": claim["id"], "channelID": str(claim["channel_id"])}}
+            )
+        )
+
+    @task_wrapper
+    async def process_channel_points(self, channel_id: int, message: JsonType):
+        logger.info(f"[WATCHDEBUG] community-points-channel-v1 message for {channel_id}: {message}")
+        if message["type"] != "claim-available":
+            return
+        claim = message["data"]["claim"]
         await self.gql_request(
             GQL_QUERIES["ClaimCommunityPoints"].with_variables(
                 {"input": {"claimID": claim["id"], "channelID": str(claim["channel_id"])}}
