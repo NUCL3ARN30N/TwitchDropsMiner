@@ -1101,29 +1101,40 @@ class Twitch:
         Preemption by a real drop channel is handled for free: once the main
         cycle runs through CHANNELS_FETCH again, it finds the points channel
         isn't a tracked drop channel and calls stop_watching() on it.
+
+        Deliberately uses Channel.get_stream() + a direct _stream assignment
+        instead of Channel.update_stream(): the latter routes through
+        on_channel_update(), which gates on can_watch() - a drop-campaign
+        check a points-only channel can never satisfy. That was forcing a
+        CHANNEL_SWITCH on every tick, tearing the watch session down and
+        rebuilding it every ~60s and resetting Twitch's own points-accrual
+        timer before it could ever complete (channel points never ticked up).
         """
         if self._state is not State.IDLE:
             return
         point_logins = self.settings.point_channels
         if not point_logins:
             return
-        current = self.watching_channel.get_with_default(None)
-        if current is not None:
-            if current.id not in {c.id for c in self._points_channels.values()}:
-                # something else holds the slot; leave it alone
-                return
-            await current.update_stream()
-            if current.online:
-                return
-            self.stop_watching()
-        for login in point_logins:
-            channel = await self.resolve_channel_login(login)
-            if channel is None:
-                continue
-            await channel.update_stream()
-            if channel.online:
-                self.watch(channel)
-                return
+        try:
+            current = self.watching_channel.get_with_default(None)
+            if current is not None:
+                if current.id not in {c.id for c in self._points_channels.values()}:
+                    # something else holds the slot; leave it alone
+                    return
+                current._stream = await current.get_stream()
+                if current.online:
+                    return
+                self.stop_watching()
+            for login in point_logins:
+                channel = await self.resolve_channel_login(login)
+                if channel is None:
+                    continue
+                channel._stream = await channel.get_stream()
+                if channel.online:
+                    self.watch(channel)
+                    return
+        except MinerException:
+            logger.log(CALL, "Points-mining channel check failed (network/GQL error)")
 
     async def _points_loop(self) -> None:
         """
