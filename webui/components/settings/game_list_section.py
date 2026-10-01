@@ -154,8 +154,7 @@ class GameListSection(ABC):
                     raw = textarea.value or ""
                     names = [n.strip() for n in re.split(r"[,\n]", raw) if n.strip()]
                     dialog.close()
-                    dialog.delete()
-                ui.timer(0.1, lambda: self._add_bulk(names), once=True)
+                self._add_bulk(names)
 
                 ui.button(
                     _("webui", "game_list", "cancel"), on_click=_cancel
