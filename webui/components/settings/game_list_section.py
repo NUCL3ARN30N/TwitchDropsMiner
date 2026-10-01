@@ -132,7 +132,7 @@ class GameListSection(ABC):
         self._do_add(name, input_el)
 
     def _open_bulk_dialog(self) -> None:
-        with ui.dialog() as dialog, ui.card().classes("q-pa-sm gap-2"):
+        with ui.dialog().props("transition-show=none transition-hide=none") as dialog, ui.card().classes("q-pa-sm gap-2"):
             ui.label(_("webui", "game_list", "bulk_add_title")).classes(
                 "text-sm font-bold"
             )
@@ -188,7 +188,7 @@ class GameListSection(ABC):
         return value
 
     def _confirm_unknown_game(self, name: str, on_confirm) -> None:
-        with ui.dialog() as dialog, ui.card().classes("q-pa-sm"):
+        with ui.dialog().props("transition-show=none transition-hide=none") as dialog, ui.card().classes("q-pa-sm"):
             ui.label(_("webui", "game_list", "no_campaigns").format(name=name)).classes(
                 "text-sm font-bold"
             )
